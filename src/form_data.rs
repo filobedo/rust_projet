@@ -1,6 +1,5 @@
 
-use serde::de::Unexpected::Str;
-use serde_json::{Result, Value};
+use serde_json::{Value};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -11,13 +10,13 @@ pub enum MessageResponse {
     Challenge(Value),
     RoundSummary(Value),
     EndOfGame(Value),
-    None
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SubscribeResult {
     Ok,
-    Error(Value)
+    Error(Value),
+    Err(Value)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
