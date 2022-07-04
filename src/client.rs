@@ -1,15 +1,18 @@
 mod form_data;
+mod hashcash;
 
 use std::net::TcpStream;
 use std::io::{Read, Write};
 use std::str::from_utf8;
 use std::{env, thread, time};
 
-use serde_json::{Value};
+use serde_json::{to_string, Value};
 use crate::form_data::PublicPlayer;
 
 fn main() {
-    let user_name = get_username();
+
+    let mut user_name = get_username();
+    let mut leader: &str = "";
     let stream = TcpStream::connect("localhost:7878");
 
 // loop
@@ -26,8 +29,13 @@ fn main() {
                     match &buff {
                         form_data::MessageResponse::Welcome(res) => welcome(&mut stream, res, user_name.clone()),
                         form_data::MessageResponse::SubscribeResult(res) => subscribe_result(res),
-                        form_data::MessageResponse::Challenge(_) => println!("here game"),
-                        form_data::MessageResponse::PublicLeaderBoard(res) => leader_board(res),
+                        form_data::MessageResponse::Challenge(res) => {
+                            /*let res = */select_challenge(res/*, &leader*/);
+                            send_message(&mut stream, "".to_string());
+                        },
+                        form_data::MessageResponse::PublicLeaderBoard(res) => {
+                            leader = leader_board(res, user_name.clone());
+                        },
                         form_data::MessageResponse::EndOfGame(_) => {
                             println!("Close connection...");
                             break;
@@ -60,16 +68,32 @@ fn subscribe_result(res: &form_data::SubscribeResult) {
     match &res {
         form_data::SubscribeResult::Ok => println!("Subscribed !"),
         form_data::SubscribeResult::Error(val) => println!("Message :  {}", val),
-        form_data::SubscribeResult::Err(val) => println!("Message : {}", val),
+        form_data::SubscribeResult::Err(val) => println!("Message : {}", val)
     }
-
 }
 
-fn leader_board(res: &Vec<PublicPlayer>) {
+fn select_challenge(challenge: &form_data::Challenge/*, user_to_target: &str*/) -> String {
+    let mut result: String = "".to_string();
+    match &challenge {
+        form_data::Challenge::MD5HashCash(res) => {
+            let temp = hashcash::hashcash(&res);
+            // println!("{:?}",temp);
+            result = "{\"ChallengeResult\":{\"answer\":{\"MD5HashCash:{\"seed\":".to_string() + &temp.seed.to_string() + ",\"hashCode\":\"" + &temp.hashcode + "\"},\"next_target\":\""+ /*user_to_target +*/ "\"}}";
+            println!("{}", result);
+
+        }
+    };
+    result
+}
+
+fn leader_board(res: &Vec<PublicPlayer>, me: String) -> &str {
     println!("Leaderboard : ");
+    let mut userToTarget = "";
     for player in res {
         println!("Player : {}", player.name);
+        if me != player.name { userToTarget = &player.name }
     }
+    return userToTarget;
 }
 
 fn round_summary(res : &Value) {
@@ -114,7 +138,6 @@ fn len_stream(stream: &mut TcpStream) -> u32 {
 }
 
 fn send_message(stream: &mut TcpStream, message: String) {
-    // let message = "\"Hello\""; //big Endian
     println!("{}", message.len() as u32);
     let n : u32 = message.len() as u32;
     stream.write_all(&n.to_be_bytes()).unwrap(); //.unwrap()
@@ -124,7 +147,8 @@ fn send_message(stream: &mut TcpStream, message: String) {
 
 fn get_username() -> String {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 1 {
+    if args.len() > 1 {
+        println!("{}", args[1].to_string());
         return args[1].to_string();
     }
     return "fred".to_string();

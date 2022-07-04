@@ -1,13 +1,13 @@
-
 use serde_json::{Value};
 use serde::{Serialize, Deserialize};
+use crate::hashcash;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MessageResponse {
     Welcome(Value),
     SubscribeResult(SubscribeResult),
     PublicLeaderBoard(Vec<PublicPlayer>),
-    Challenge(Value),
+    Challenge(Challenge),
     RoundSummary(Value),
     EndOfGame(Value),
 }
@@ -17,6 +17,11 @@ pub enum SubscribeResult {
     Ok,
     Error(Value),
     Err(Value)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Challenge {
+    MD5HashCash(hashcash::MD5HashCashInput)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
