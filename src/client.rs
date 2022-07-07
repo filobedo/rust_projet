@@ -1,5 +1,6 @@
 mod form_data;
 mod hashcash;
+mod maze;
 
 use std::net::TcpStream;
 use std::io::{Read, Write};
@@ -93,6 +94,11 @@ fn select_challenge(challenge: &form_data::Challenge, user_to_target: &str) -> S
             result = "{\"ChallengeResult\":{\"answer\":{\"MD5HashCash\":{\"seed\":".to_string() + &temp.seed.to_string() + ",\"hashcode\":\"" + &temp.hashcode + "\"}},\"next_target\":\""+ user_to_target + "\"}}";
             println!("{}", result);
 
+        },
+        form_data::Challenge::Maze(res) => {
+            let temp = maze::start(&res);
+            result = "{\"ChallengeResult\":{\"answer\":{\"MonstrousMaze\":{\"path\":".to_string() + "&temp.seed.to_string()" + "\"}},\"next_target\":\""+ user_to_target + "\"}}";
+            println!("{}", result);
         }
     };
     result

@@ -1,6 +1,7 @@
 use serde_json::{Value};
 use serde::{Serialize, Deserialize};
 use crate::hashcash;
+use crate::maze;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MessageResponse {
@@ -21,7 +22,8 @@ pub enum SubscribeResult {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Challenge {
-    MD5HashCash(hashcash::MD5HashCashInput)
+    MD5HashCash(hashcash::MD5HashCashInput),
+    MonstrousMaze(maze::MonstrousMazeInput)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
