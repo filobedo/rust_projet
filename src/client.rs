@@ -9,10 +9,22 @@ use std::{env, thread, time};
 use serde_json::{to_string, Value};
 use crate::form_data::PublicPlayer;
 
+macro_rules! attempt { // `try` is a reserved keyword
+   (@recurse ($a:expr) { } catch ($e:ident) $b:block) => {
+      if let Err ($e) = $a $b
+   };
+   (@recurse ($a:expr) { $e:expr; $($tail:tt)* } $($handler:tt)*) => {
+      attempt!{@recurse ($a.and_then (|_| $e)) { $($tail)* } $($handler)*}
+   };
+   ({ $e:expr; $($tail:tt)* } $($handler:tt)*) => {
+      attempt!{@recurse ($e) { $($tail)* } $($handler)* }
+   };
+}
+
 fn main() {
 
     let mut user_name = get_username();
-    let mut leader: &str = "";
+    let mut leader: String = "".to_string();
     let stream = TcpStream::connect("localhost:7878");
 
 // loop
@@ -30,26 +42,26 @@ fn main() {
                         form_data::MessageResponse::Welcome(res) => welcome(&mut stream, res, user_name.clone()),
                         form_data::MessageResponse::SubscribeResult(res) => subscribe_result(res),
                         form_data::MessageResponse::Challenge(res) => {
-                            /*let res = */select_challenge(res/*, &leader*/);
-                            send_message(&mut stream, "".to_string());
+                            let res = select_challenge(res, &leader);
+                            send_message(&mut stream, res.to_string());
                         },
                         form_data::MessageResponse::PublicLeaderBoard(res) => {
                             leader = leader_board(res, user_name.clone());
                         },
-                        form_data::MessageResponse::EndOfGame(_) => {
+                        form_data::MessageResponse::EndOfGame(res) => {
                             println!("Close connection...");
+                            println!("{}", res);
                             break;
                         },
                         form_data::MessageResponse::RoundSummary(value) => round_summary(value)
                     }
                 }
 
-                let ten_millis = time::Duration::from_millis(1000);
-                thread::sleep(ten_millis);
+                // let ten_millis = time::Duration::from_millis(100);
+                // thread::sleep(ten_millis);
             }
 
             //close connection
-            // TcpStream::shutdown(&stream, Shutdown::Read);
             drop(stream);
         }
 
@@ -72,13 +84,13 @@ fn subscribe_result(res: &form_data::SubscribeResult) {
     }
 }
 
-fn select_challenge(challenge: &form_data::Challenge/*, user_to_target: &str*/) -> String {
+fn select_challenge(challenge: &form_data::Challenge, user_to_target: &str) -> String {
     let mut result: String = "".to_string();
     match &challenge {
         form_data::Challenge::MD5HashCash(res) => {
             let temp = hashcash::hashcash(&res);
             // println!("{:?}",temp);
-            result = "{\"ChallengeResult\":{\"answer\":{\"MD5HashCash:{\"seed\":".to_string() + &temp.seed.to_string() + ",\"hashCode\":\"" + &temp.hashcode + "\"},\"next_target\":\""+ /*user_to_target +*/ "\"}}";
+            result = "{\"ChallengeResult\":{\"answer\":{\"MD5HashCash\":{\"seed\":".to_string() + &temp.seed.to_string() + ",\"hashcode\":\"" + &temp.hashcode + "\"}},\"next_target\":\""+ user_to_target + "\"}}";
             println!("{}", result);
 
         }
@@ -86,14 +98,14 @@ fn select_challenge(challenge: &form_data::Challenge/*, user_to_target: &str*/) 
     result
 }
 
-fn leader_board(res: &Vec<PublicPlayer>, me: String) -> &str {
+fn leader_board(res: &Vec<PublicPlayer>, me: String) -> String {
     println!("Leaderboard : ");
     let mut userToTarget = "";
     for player in res {
         println!("Player : {}", player.name);
         if me != player.name { userToTarget = &player.name }
     }
-    return userToTarget;
+    return userToTarget.to_string();
 }
 
 fn round_summary(res : &Value) {
@@ -113,8 +125,12 @@ fn return_value(stream: &mut TcpStream, size: u32) -> form_data::MessageResponse
     data.resize(size.try_into().unwrap(), 0);
     match stream.read(&mut data) {
         Ok(_) => {
-            let v: form_data::MessageResponse = serde_json::from_str(from_utf8(&data).unwrap()).unwrap();
-            return v;
+            // attempt!{{
+                let v: form_data::MessageResponse = serde_json::from_str(from_utf8(&data).unwrap()).unwrap();
+                return v;
+            //     } catch(e) {
+            //     println!("Erreur");
+            // }}
         },
         Err(e) => {
             println!("Failed to receive data: {}", e);
@@ -132,6 +148,7 @@ fn len_stream(stream: &mut TcpStream) -> u32 {
         },
         Err(e) => {
             println!("Failed to get length: {}", e);
+            drop(stream);
         }
     }
     return 0;
