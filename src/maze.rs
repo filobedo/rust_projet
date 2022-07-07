@@ -75,7 +75,7 @@ fn find_ending_points(grid: &String) -> Coordinate {
 }
 
 
-fn find_exit(maze: &MonstrousMazeInput, mut coordinate: &mut Coordinate, mut direction: i32) -> bool {
+fn find_exit(maze: &MonstrousMazeInput, mut coordinate: &mut Coordinate, direction: i32) -> bool {
     let grid = maze.grid.split("\n");
     let mut rows: Vec<Vec<char>> = Vec::new();
     println!("coord end");
@@ -210,12 +210,12 @@ pub fn start(maze: &MonstrousMazeInput) {
     //     grid,
     //     endurance,
     // };
-    let mut path = MonstrousMazeOutput {
+    let path = MonstrousMazeOutput {
         path: " ".to_string(),
     };
 
-    let mut start_coordinate: Coordinate = find_starting_points(&maze.grid);
-    let mut end_coordinate = find_ending_points(&maze.grid);
+    let start_coordinate: Coordinate = find_starting_points(&maze.grid);
+    let end_coordinate = find_ending_points(&maze.grid);
     let mut coordinate: Coordinate = Coordinate {
         start_x: start_coordinate.start_x,
         start_y: start_coordinate.start_y,

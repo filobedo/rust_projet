@@ -5,26 +5,14 @@ mod maze;
 use std::net::TcpStream;
 use std::io::{Read, Write};
 use std::str::from_utf8;
-use std::{env, thread, time};
+use std::{env};
 
-use serde_json::{to_string, Value};
+use serde_json::{Value};
 use crate::form_data::PublicPlayer;
-
-macro_rules! attempt { // `try` is a reserved keyword
-   (@recurse ($a:expr) { } catch ($e:ident) $b:block) => {
-      if let Err ($e) = $a $b
-   };
-   (@recurse ($a:expr) { $e:expr; $($tail:tt)* } $($handler:tt)*) => {
-      attempt!{@recurse ($a.and_then (|_| $e)) { $($tail)* } $($handler)*}
-   };
-   ({ $e:expr; $($tail:tt)* } $($handler:tt)*) => {
-      attempt!{@recurse ($e) { $($tail)* } $($handler)* }
-   };
-}
 
 fn main() {
 
-    let mut user_name = get_username();
+    let user_name = get_username();
     let mut leader: String = "".to_string();
     let stream = TcpStream::connect("localhost:7878");
 
@@ -96,8 +84,8 @@ fn select_challenge(challenge: &form_data::Challenge, user_to_target: &str) -> S
 
         },
         form_data::Challenge::MonstrousMaze(res) => {
-            let temp = maze::start(&res);
-            result = "{\"ChallengeResult\":{\"answer\":{\"MonstrousMaze\":{\"path\":".to_string() + "&temp.seed.to_string()" + "\"}},\"next_target\":\""+ user_to_target + "\"}}";
+            // let temp = maze::start(&res);
+            result = "{\"ChallengeResult\":{\"answer\":{\"MonstrousMaze\":{\"path\":".to_string() + "&temp.to_string()" + "\"}},\"next_target\":\""+ user_to_target + "\"}}";
             println!("{}", result);
         }
     };
@@ -106,12 +94,12 @@ fn select_challenge(challenge: &form_data::Challenge, user_to_target: &str) -> S
 
 fn leader_board(res: &Vec<PublicPlayer>, me: String) -> String {
     println!("Leaderboard : ");
-    let mut userToTarget = "";
+    let mut user_to_target = "";
     for player in res {
         println!("Player : {}", player.name);
-        if me != player.name { userToTarget = &player.name }
+        if me != player.name { user_to_target = &player.name }
     }
-    return userToTarget.to_string();
+    return user_to_target.to_string();
 }
 
 fn round_summary(res : &Value) {
