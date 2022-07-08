@@ -89,8 +89,6 @@ fn find_exit(maze: &MonstrousMazeInput, mut coordinate: &mut Coordinate, directi
     grid.for_each(|x| rows.push(x.chars().collect()));
     let mut ok: bool = false;
 
-    //print!("{} ", coordinate.start_y);
-    //println!("{}", coordinate.start_x);
 
     for i in 0..4{
         if !ok {
@@ -203,8 +201,8 @@ pub fn start(maze: &MonstrousMazeInput) {
                             │     │ │       │ │
                             └─────┴─┴───────┴X┘"};
 
-    let grid: String = tmp_maze.to_string();
-    let endurance = 1 as u8;
+    // let grid: String = tmp_maze.to_string();
+    // let endurance = 1 as u8;
 
     // let maze = MonstrousMazeInput {
     //     grid,
@@ -222,8 +220,8 @@ pub fn start(maze: &MonstrousMazeInput) {
         end_x: end_coordinate.end_x,
         end_y: end_coordinate.end_y,
     };
-    let tmp = find_exit(&maze, &mut coordinate, -1);
-    if tmp {
+    let endOfMaze = find_exit(&maze, &mut coordinate, -1);
+    if endOfMaze {
         println!("finish")
     }else {
         println!("nop")

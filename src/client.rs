@@ -45,11 +45,7 @@ fn main() {
                         form_data::MessageResponse::RoundSummary(value) => round_summary(value)
                     }
                 }
-
-                // let ten_millis = time::Duration::from_millis(100);
-                // thread::sleep(ten_millis);
             }
-
             //close connection
             drop(stream);
         }
@@ -84,7 +80,7 @@ fn select_challenge(challenge: &form_data::Challenge, user_to_target: &str) -> S
 
         },
         form_data::Challenge::MonstrousMaze(res) => {
-            // let temp = maze::start(&res);
+            let temp = maze::start(&res);
             result = "{\"ChallengeResult\":{\"answer\":{\"MonstrousMaze\":{\"path\":".to_string() + "&temp.to_string()" + "\"}},\"next_target\":\""+ user_to_target + "\"}}";
             println!("{}", result);
         }
@@ -108,7 +104,6 @@ fn round_summary(res : &Value) {
     println!("{}", res);
     println!("-----------------");
 }
-
 //-------- End Message Traitment --------
 
 
@@ -119,12 +114,8 @@ fn return_value(stream: &mut TcpStream, size: u32) -> form_data::MessageResponse
     data.resize(size.try_into().unwrap(), 0);
     match stream.read(&mut data) {
         Ok(_) => {
-            // attempt!{{
                 let v: form_data::MessageResponse = serde_json::from_str(from_utf8(&data).unwrap()).unwrap();
                 return v;
-            //     } catch(e) {
-            //     println!("Erreur");
-            // }}
         },
         Err(e) => {
             println!("Failed to receive data: {}", e);
@@ -151,8 +142,8 @@ fn len_stream(stream: &mut TcpStream) -> u32 {
 fn send_message(stream: &mut TcpStream, message: String) {
     println!("{}", message.len() as u32);
     let n : u32 = message.len() as u32;
-    stream.write_all(&n.to_be_bytes()).unwrap(); //.unwrap()
-    stream.write_all(&message.as_bytes()).unwrap(); //.unwrap()
+    stream.write_all(&n.to_be_bytes()).unwrap();
+    stream.write_all(&message.as_bytes()).unwrap();
 }
 //------- End TCP Traitment --------
 
